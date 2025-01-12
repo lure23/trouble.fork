@@ -28,6 +28,8 @@ defmt = [
     "embedded-io/defmt-03",
     "embedded-hal/defmt-03"
 ]
+# tbd. document, which chips should have this enabled
+#   suggested renaming to 'l2cap-mtu-1017'
 esp = []
 log = [
     "dep:log",
