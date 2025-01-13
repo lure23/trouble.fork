@@ -3,12 +3,7 @@ use embassy_time::{Duration, Timer};
 use trouble_host::prelude::*;
 
 /// Size of L2CAP packets
-#[cfg(not(any(feature = "l2cap-mtu-255", feature = "l2cap-mtu-1017")))]
 const L2CAP_MTU: usize = 128;
-#[cfg(feature = "l2cap-mtu-255")]
-const L2CAP_MTU: usize = 255;
-#[cfg(feature = "l2cap-mtu-1017")]
-const L2CAP_MTU: usize = 1017;
 
 /// Max number of connections
 const CONNECTIONS_MAX: usize = 1;

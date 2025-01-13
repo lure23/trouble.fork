@@ -28,8 +28,6 @@ defmt = [
     "embedded-io/defmt-03",
     "embedded-hal/defmt-03"
 ]
-l2cap-mtu-255 = []      # ESP32-C6
-l2cap-mtu-1017 = []     # used to be used for all ESP32 chips
 
 log = [
     "dep:log",
