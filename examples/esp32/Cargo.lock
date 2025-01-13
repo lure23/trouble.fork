@@ -1294,6 +1294,7 @@ dependencies = [
  "esp-println",
  "esp-wifi",
  "trouble-example-apps",
+ "trouble-host",
 ]
 
 [[package]]
