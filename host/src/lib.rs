@@ -295,42 +295,16 @@ impl<
 ///
 /// The l2cap packet pool is used by the host to handle inbound data, by allocating space for
 /// incoming packets and dispatching to the appropriate connection and channel.
-#[cfg(not(any(feature = "l2cap-mtu-255", feature="l2cap-mtu-1017")))]
 pub struct HostResources<
     C: Controller,
     const CONNS: usize,
     const CHANNELS: usize,
-    const L2CAP_MTU: usize,
+    const L2CAP_MTU: usize,     // note: this may be greater than the application asks if 'feature = "l2cap-mtu-..."' is enabled
     const ADV_SETS: usize = 1,
 > {
     qos: Qos,
     rx_pool: MaybeUninit<PacketPool<NoopRawMutex, L2CAP_MTU, { config::L2CAP_RX_PACKET_POOL_SIZE }, CHANNELS>>,
-    #[cfg(feature = "gatt")]
     tx_pool: MaybeUninit<PacketPool<NoopRawMutex, L2CAP_MTU, { config::L2CAP_TX_PACKET_POOL_SIZE }, 1>>,
-    connections: MaybeUninit<[ConnectionStorage; CONNS]>,
-    events: MaybeUninit<[EventChannel<'static>; CONNS]>,
-    channels: MaybeUninit<[ChannelStorage; CHANNELS]>,
-    channels_rx: MaybeUninit<[PacketChannel<'static, { config::L2CAP_RX_QUEUE_SIZE }>; CHANNELS]>,
-    sar: MaybeUninit<[SarType<'static>; CONNS]>,
-    advertise_handles: MaybeUninit<[AdvHandleState; ADV_SETS]>,
-    inner: MaybeUninit<BleHost<'static, C>>,
-}
-/// HostResources holds the resources used by the host.
-///
-/// The l2cap packet pool is used by the host to handle inbound data, by allocating space for
-/// incoming packets and dispatching to the appropriate connection and channel.
-#[cfg(feature = "l2cap-mtu-255")]
-pub struct HostResources<
-    C: Controller,
-    const CONNS: usize,
-    const CHANNELS: usize,
-    const _L2CAP_MTU: usize,    // ignored, using fixed value instead
-    const ADV_SETS: usize = 1,
-> {
-    qos: Qos,
-    rx_pool: MaybeUninit<PacketPool<NoopRawMutex, 255, { config::L2CAP_RX_PACKET_POOL_SIZE }, CHANNELS>>,
-    #[cfg(feature = "gatt")]
-    tx_pool: MaybeUninit<PacketPool<NoopRawMutex, 255, { config::L2CAP_TX_PACKET_POOL_SIZE }, 1>>,
     connections: MaybeUninit<[ConnectionStorage; CONNS]>,
     events: MaybeUninit<[EventChannel<'static>; CONNS]>,
     channels: MaybeUninit<[ChannelStorage; CHANNELS]>,
@@ -343,9 +317,39 @@ pub struct HostResources<
 impl<C: Controller, const CONNS: usize, const CHANNELS: usize, const L2CAP_MTU: usize, const ADV_SETS: usize>
     HostResources<C, CONNS, CHANNELS, L2CAP_MTU, ADV_SETS>
 {
+    // Note: We _cannot_ make arithmetic (e.g. 'const_max(255,L2CAP_MUT)', or even '1 + L2CAP_MUT',
+    //      with the generic const parameter (that is not yet supported in stable Rust). We can
+    //      fully ignore the 'L2CAP_MTU' and _fix_ every creation to be X bytes long.
+    //
+    //#[cfg(feature = "l2cap-mtu-255")]
+    //const fn const_max(a: usize, b: usize) -> usize { if a>b {a} else {b} }
+    //
+    //#[cfg(feature = "l2cap-mtu-255")]
+    //const L2CAP_MTU_2: usize = const_max(255,L2CAP_MTU);
+
     /// Create a new instance of host resources with the provided QoS requirements for packets.
+    #[cfg(not(feature = "l2cap-mtu-255"))]
     pub fn new(qos: Qos) -> Self {
+
         Self {
+            qos,
+            rx_pool: MaybeUninit::uninit(),
+            #[cfg(feature = "gatt")]
+            tx_pool: MaybeUninit::uninit(),
+            connections: MaybeUninit::uninit(),
+            events: MaybeUninit::uninit(),
+            sar: MaybeUninit::uninit(),
+            channels: MaybeUninit::uninit(),
+            channels_rx: MaybeUninit::uninit(),
+            advertise_handles: MaybeUninit::uninit(),
+            inner: MaybeUninit::uninit(),
+        }
+    }
+    /// Create a new instance of host resources with the provided QoS requirements for packets.
+    #[cfg(feature = "l2cap-mtu-255")]
+    pub fn new(qos: Qos) -> /*Self*/ HostResources<C, CONNS, CHANNELS, 255, ADV_SETS> {
+
+        /*Self*/ HostResources {
             qos,
             rx_pool: MaybeUninit::uninit(),
             #[cfg(feature = "gatt")]
